@@ -32,3 +32,15 @@ percent.p
 ```
 90% of X-ray readings are protein structures
 
+There are currently 1103 HIV-1 Structures on the PDB website
+
+##Accessing 1HSG PDB File
+Installing files
+```{r}
+library(bio3d)
+```
+
+List the functions of this package 
+```{r}
+pdb <- read.pdb("1hsg")
+```
