@@ -44,3 +44,23 @@ List the functions of this package
 ```{r}
 pdb <- read.pdb("1hsg")
 ```
+
+Calling out C-alpha only file
+```{r}
+ca.inds <- atom.select(pdb, "calpha")
+```
+
+Checking if we have what we want 
+```{r}
+head(pdb$atom[ca.inds$atom,])
+```
+
+Take out our indices and trim our PDB
+```{r}
+ca.pdb <- trim.pdb(pdb, inds = ca.inds)
+```
+
+Write this out 
+```{r}
+write.pdb(ca.pdb, file = "c_alpha_only.pdb")
+```
