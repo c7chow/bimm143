@@ -16,9 +16,19 @@ Download CSV file from PDB database
 pdb.stats <- read.csv("Data Export Summary.csv")
 ```
 
-Calculating something
+Calculating percentages of the amount of data in the PDB database
 ```{r}
 percent <- (pdb.stats$Total/ sum(pdb.stats$Total))*100
 names(percent) <- pdb.stats$Experimental.Method
 percent
 ```
+X-Ray takes about 89.5% of the entries on PDB
+
+Caclulating the percentage of proteins 
+```{r}
+percent.p <- (pdb.stats$Proteins/sum(pdb.stats$Proteins))*100
+names(percent.p) <- pdb.stats$Experimental.Method
+percent.p
+```
+90% of X-ray readings are protein structures
+
