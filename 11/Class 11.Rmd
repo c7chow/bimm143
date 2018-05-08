@@ -1,0 +1,24 @@
+---
+title: "Bioinformatics Lecture 11"
+author: "Cassandra Chow"
+date: "May 8, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##PDB Statistics
+Download CSV file from PDB database
+
+```{r}
+pdb.stats <- read.csv("Data Export Summary.csv")
+```
+
+Calculating something
+```{r}
+percent <- (pdb.stats$Total/ sum(pdb.stats$Total))*100
+names(percent) <- pdb.stats$Experimental.Method
+percent
+```
