@@ -33,3 +33,9 @@ Write out these new PDB files so we can use them for docking
 write.pdb(protein, "1hsg_protein.pdb")
 write.pdb(ligands, "1hsg_ligand.pdb")
 ```
+
+##Process docking results for vmd display
+```{r}
+res <- read.pdb("all.pdbqt", multi=TRUE)
+write.pdb(res, "results.pdb")
+```
