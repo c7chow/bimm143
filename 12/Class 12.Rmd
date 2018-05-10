@@ -1,0 +1,35 @@
+---
+title: "Bioinformatics Lecture 12"
+author: "Cassandra Chow"
+date: "May 10, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Setting up Drug Docking
+
+Installing Bio3D package 
+```{r}
+library(bio3d)
+file.name <- get.pdb("1hsg")
+```
+
+Obtain the HIV structure
+```{r}
+hiv <- read.pdb(file.name)
+hiv
+```
+
+Selecting out protein and ligands only
+```{r}
+protein <- trim.pdb(hiv, "protein")
+ligands <- trim.pdb(hiv, "ligand")
+```
+
+Write out these new PDB files so we can use them for docking 
+```{r}
+write.pdb(protein, "1hsg_protein.pdb")
+write.pdb(ligands, "1hsg_ligand.pdb")
+```
