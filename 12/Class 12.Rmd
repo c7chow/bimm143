@@ -39,3 +39,14 @@ write.pdb(ligands, "1hsg_ligand.pdb")
 res <- read.pdb("all.pdbqt", multi=TRUE)
 write.pdb(res, "results.pdb")
 ```
+
+##RMSD (root mean square distance) of our results 
+Select nonhydrogen atoms from our docking result file 
+```{r}
+inds.res <- atom.select(res, "noh")
+inds.res
+```
+
+```{r}
+rmsd(ligands, res$xyz[,inds.res$xyz])
+```
