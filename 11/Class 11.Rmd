@@ -64,3 +64,15 @@ Write this out
 ```{r}
 write.pdb(ca.pdb, file = "c_alpha_only.pdb")
 ```
+
+```{r}
+#Download files
+ids <- c("1TND_B","1AGR_A","1TAG_A","1GG2_A","1KJY_A","4G5Q_A")
+files <- get.pdb(ids, split = TRUE)
+pdbs <- pdbaln(files, fit = TRUE)
+```
+
+```{r}
+pdbs
+```
+
