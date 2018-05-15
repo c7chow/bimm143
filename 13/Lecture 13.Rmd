@@ -69,3 +69,9 @@ library(ggplot2)
 ggplot(txt, aes(geno, exp)) + geom_boxplot()
 ```
 
+Boxplot with the data shown
+```{r}
+ggplot(txt, aes(geno, exp, fill=geno)) + 
+  geom_boxplot(notch=TRUE, outlier.shape = NA) + 
+  geom_jitter(shape=16, position=position_jitter(0.2), alpha=0.4)
+```
