@@ -1,0 +1,221 @@
+---
+title: "Lecture 14"
+author: "Cassandra Chow"
+date: "May 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Transcriptomics and the analysis of RNA-Seq Data
+Import countData and colData
+```{r}
+counts <- read.csv("data/airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <-  read.csv("data/airway_metadata.csv", stringsAsFactors = FALSE)
+```
+
+Toy Differential Gene Expression
+```{r}
+control <- metadata[metadata[,"dex"]=="control",]
+#change the number from 4 to the number needed 
+control.mean <- rowSums( counts[ ,control$id] )/nrow(control) 
+names(control.mean) <- counts$ensgene
+```
+
+Working on treated
+```{r}
+treated <- metadata[metadata[,"dex"]=="treated",]
+treated.mean <- rowSums(counts[,treated$id])/nrow(treated)
+names(treated.mean) <- counts$ensgene
+```
+
+Combining data together
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+colSums(meancounts)
+```
+
+Creating a scatter plot
+```{r}
+plot.default(meancounts, xlab = "logControl", ylab = "logTreated", log = "xy")
+```
+
+Calculating log2foldchange
+```{r}
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+```
+
+We realize that there are some nonexistent or negative numbers, we need to filter it out
+```{r}
+#which function calls out the true, and we are to return these values
+zero.vals <- which(meancounts[,1:2]==0, arr.ind=TRUE)
+#unique function helps determine which cells should be removed from the zero.vals vector
+#it removes any zeroes
+to.rm <- unique(zero.vals[,1])
+#we remove any unreadable values from the actual matrix
+mycounts <- meancounts[-to.rm,]
+head(mycounts)
+```
+
+Checking the up-regulation and down-regulation
+```{r}
+up.ind <- mycounts$log2fc > 2
+down.ind <- mycounts$log2fc < (-2)
+paste("the number of up-regulation genes is", sum(up.ind))
+paste("the number of down-regulation genes is", sum(down.ind))
+```
+
+Adding annotating data
+```{r}
+anno <- read.csv("data/annotables_grch38.csv")
+```
+
+Merging this table 
+```{r}
+results <- merge(mycounts, anno, by.x = "row.names", by.y = "ensgene")
+```
+
+Installing packages
+```{r}
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+
+Seeing if the packages work
+```{r}
+columns(org.Hs.eg.db)
+```
+
+Adding maPIds
+```{r}
+mycounts$symbol <- mapIds(org.Hs.eg.db,
+                     keys=row.names(mycounts),
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+```
+
+##DESeq2 analysis
+Installing packages
+```{r}
+library(DESeq2)
+citation("DESeq2")
+```
+
+Importing data
+```{r}
+dds <- DESeqDataSetFromMatrix(countData=counts, 
+                              colData=metadata, 
+                              design=~dex, 
+                              tidy=TRUE)
+dds
+```
+
+```{r}
+dds <- DESeq(dds)
+```
+
+Getting results
+```{r}
+res <- results(dds)
+res
+```
+
+```{r}
+summary(res)
+```
+
+Order of smallest p-values
+```{r}
+resOrdered <- res[order(res$pvalue),]
+res05 <- results(dds, alpha=0.05)
+resSig05 <- subset(as.data.frame(res), padj < 0.05)
+nrow(resSig05)
+```
+
+Changing the alpha value
+```{r}
+res01 <- results(dds, alpha=0.01)
+resSig01 <- subset(as.data.frame(res), padj < 0.01)
+nrow(resSig01)
+```
+
+Adding annotations along to resSig01
+```{r}
+resSig01$symbol <- mapIds(org.Hs.eg.db,
+                     keys=row.names(resSig01),
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+```
+
+Arrange the results of adjusted P-value
+```{r}
+ord <- order( resSig01$padj )
+#View(res01[ord,])
+head(resSig01[ord,])
+```
+
+Saving the file
+```{r}
+write.csv(resSig01[ord,], "signif01_results.csv")
+```
+
+##Data Visualization
+Plotting counts
+```{r}
+#intgroup is called "interesting group"
+plotCounts(dds, gene="ENSG00000103196", intgroup="dex")
+```
+Return the data 
+```{r}
+d <- plotCounts(dds, gene="ENSG00000103196", intgroup="dex", returnData=TRUE)
+head(d)
+```
+Pretty bar plot 
+```{r}
+library(ggplot2)
+ggplot(d, aes(dex, count)) + geom_boxplot(aes(fill=dex)) + scale_y_log10() + ggtitle("CRISPLD2")
+```
+
+MA Plot
+```{r}
+plotMA(res, ylim=c(-2,2))
+```
+
+Looking at this plot, we want to shrink the size so we can have a better view
+```{r}
+#set the log to 2
+resLFC <- lfcShrink(dds, coef=2)
+plotMA(resLFC, ylim=c(-2,2))
+```
+
+Adding sig table
+```{r}
+res$sig <- res$padj<0.05
+
+# How many of each?
+table(res$sig)
+```
+
+Volcano Plot
+```{r}
+ggplot(as.data.frame(res), aes(log2FoldChange, -1*log10(pvalue), col=sig)) + 
+    geom_point() + 
+    ggtitle("Volcano plot")
+```
+
+Transformation
+```{r}
+vsdata <- vst(dds, blind=FALSE)
+```
+
+Perform PCA
+```{r}
+plotPCA(vsdata, intgroup="dex")
+```
+
+
