@@ -1,0 +1,141 @@
+---
+title: "Lecture 15"
+author: "Cassandra Chow"
+date: "May 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Differential Expression Analysis
+Download DESeq2 packages
+```{r}
+library(DESeq2)
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+
+Load our data files
+```{r}
+colData <- read.csv("data/GSE37704_metadata.csv", row.names = 1)
+countData <- read.csv("data/GSE37704_featurecounts.csv", row.names = 1)
+```
+
+Re-formatting to look better by removing the length column
+```{r}
+countData <- as.matrix(countData[,-1])
+```
+
+Filter count data where you have 0 read count across all samples.
+```{r}
+countData = countData[rowSums(countData) > 1, ]
+head(countData)
+```
+
+Setting up the DESeqDataSet object reuired for the DESeq() function
+```{r}
+dds = DESeqDataSetFromMatrix(countData=countData,
+                             colData=colData,
+                             design=~condition)
+dds = DESeq(dds)
+```
+
+Obtaining results for HoxA1 knockdown vs control SiRNA, also order of importance 
+```{r}
+res <- results(dds, contrast=c("condition", "hoxa1_kd", "control_sirna"))
+res <- res[order(res$pvalue),]
+```
+
+Using the MapIDs function to help produce symbols
+```{r}
+res$symbol = mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="SYMBOL",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="ENTREZID",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+res$name =   mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    column="GENENAME",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+```
+
+##Pathway Analysis
+
+Installing more packages
+```{r}
+library(pathview)
+library(gage)
+library(gageData)
+```
+
+Set-up KEGG packages
+```{r}
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+
+kegg.sets.hs = kegg.sets.hs[sigmet.idx.hs]
+head(kegg.sets.hs, 3)
+```
+
+Gage function requires log2fold calues
+```{r}
+foldchanges <- res$log2FoldChange
+names(foldchanges) <- res$entrez
+head(foldchanges)
+```
+
+Run pathway analysis
+```{r}
+keggres = gage(foldchanges, gsets=kegg.sets.hs, same.dir=TRUE)
+attributes(keggres)
+```
+
+Using the lapply function for analysis 
+```{r}
+lapply(keggres, head)
+```
+
+"Sanity Check"
+```{r}
+pathways = data.frame(id=rownames(keggres$greater), keggres$greater)
+head(pathways)
+```
+
+Using pathview package to look at things nicely (with color~)
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110")
+```
+
+Shall we look at this
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa04110", kegg.native=FALSE)
+```
+
+Here's to inserting on our Rmd
+![](hsa04110.pathview.png)
+
+Looking at upregulated pathways
+```{r}
+# Focus on top 5 upregulated pathways here for demo purposes only
+keggrespathways <- rownames(keggres$greater)[1:5]
+
+# Extract the IDs part of each string
+keggresids = substr(keggrespathways, start=1, stop=8)
+keggresids
+```
+
+Time to store these draw plots
+```{r}
+pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
+```
+
