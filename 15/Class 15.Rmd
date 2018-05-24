@@ -139,3 +139,33 @@ Time to store these draw plots
 pathview(gene.data=foldchanges, pathway.id=keggresids, species="hsa")
 ```
 
+Extra images... will not be inserted
+![](hsa04640.pathview.png)
+![](hsa04630.pathview.png)
+
+
+##Gene Ontology
+Let's grab some more data
+```{r}
+data(go.sets.hs)
+data(go.subs.hs)
+gobpsets = go.sets.hs[go.subs.hs$BP]
+
+gobpres = gage(foldchanges, gsets=gobpsets, same.dir=TRUE)
+
+lapply(gobpres, head)
+```
+
+
+##Reactome Pathway Analysis
+Create and output list
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+
+Create table
+```{r}
+write.table(sig_genes, file="significant_genes.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+```
