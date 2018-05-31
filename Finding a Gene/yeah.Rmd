@@ -1,0 +1,68 @@
+---
+title: "Finding a Gene Assignment"
+author: "Cassandra Chow"
+date: "May 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Installing Packages
+```{r}
+library(knitr)
+library(bio3d)
+library(stringr)
+library(tidyr)
+library(dplyr)
+```
+
+Calculating percent identity
+```{r}
+readalign <- read.fasta("alignment2")
+percentage <- seqidentity(readalign)
+```
+
+Using heatmap
+```{r}
+par(mar = c(5,5,5,5))
+heatmap(as.matrix(percentage), cexRow = 0.75 ,cexCol = 0.75)
+```
+
+Finding the consensus
+```{r}
+chosen <- consensus(readalign)
+```
+
+Running blast on R
+```{r}
+blasted <- blast.pdb(chosen$seq)
+blasted
+```
+
+```{r}
+seeme <- blasted$hit.tbl[1:10, c("subjectids", "evalue", "bitscore")]
+seeme
+```
+
+```{r}
+plot.blast(blasted)
+```
+
+Looking at these, I will choose "1W0E_A", "4D6Z_A", and "5VEU_A".
+```{r}
+ids <- c("1W0E", "4D6Z", "5VEU")
+files <- get.pdb(ids, split = TRUE)
+```
+
+This only takes in the A structure
+```{r}
+pdbs <- pdbaln(files, fit = TRUE)
+```
+
+Annotating the structure 
+```{r}
+anno <- pdb.annotate(ids)
+print(anno[1:3, c("structureId", "experimentalTechnique", "source")])
+```
