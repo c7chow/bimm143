@@ -1,0 +1,75 @@
+---
+title: "Lecture 18"
+author: "Cassandra Chow"
+date: "May 31, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Learning to use the Genomics Data Commons package
+
+Downloading packages
+```{r}
+library(GenomicDataCommons)
+library(maftools)
+```
+
+Checking the status 
+```{r}
+GenomicDataCommons::status()
+```
+All good!
+
+##Querying the GDC from R
+We will use this example and look at what we can do
+```{r}
+cases_by_project <- cases() %>%
+  facet("project.project_id") %>%
+  aggregations()
+head(cases_by_project)
+```
+
+Let us view
+```{r}
+plotting <- cases_by_project$project.project_id
+```
+
+Setting the color
+```{r}
+mycols <- rep("lightblue", nrow(plotting))
+ind <- which(plotting[,1] == "TCGA-PAAD")
+mycols[ind] = "red"
+barplot(plotting$doc_count, names.arg = plotting$key, log = "y", las =2, col = mycols, cex.names = 0.7)
+```
+
+Let's look at another file
+```{r}
+file_records <- files() %>%
+  filter(~ cases.project.project_id == "TCGA-PAAD" &
+    data_type == "Gene Expression Quantification" &
+    analysis.workflow_type == "HTSeq - Counts") %>%
+  response_all()
+```
+
+
+##Protein Sequencing
+Installing more packages
+```{r}
+library(bio3d)
+```
+
+Looking at mismatched proteins
+```{r}
+sequence <- read.fasta("data/lecture18_sequences.fa")
+attributes(sequence)
+```
+
+```{r}
+check <- conserv(sequence)
+mutpos <- which(check < 1)
+```
+
+
